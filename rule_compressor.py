@@ -13,7 +13,9 @@ class RuleCompressor:
         return rules
     
     def remove_rules_worse_than_random(self):
-        self.rules = [r for r in self.rules if r.confidence > 0.5]
+        rhs_support = self.data['donor_is_old'].mean()
+        # self.rules = [r for r in self.rules if r.confidence > rhs_support]
+        self.rules = [r for r in self.rules if r.calculate_p_value(self.data) < 0.01]
     
     def remove_inclusive_rules(self):
         """

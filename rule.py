@@ -30,6 +30,20 @@ class Rule:
         support_lhs = valid_data[lhs_mask].shape[0]
         return support_lhs_rhs / support_lhs if support_lhs > 0 else 0.0
     
+    def calculate_p_value(self, data):
+        valid_data = data[data[self.conclusion].notna() & 
+                        data[list(self.biomarkers.union(self.negated_biomarkers))].notna().all(axis=1)]
+        lhs_mask = valid_data[list(self.biomarkers)].all(axis=1) & ~valid_data[list(self.negated_biomarkers)].any(axis=1)
+        nrows = valid_data[lhs_mask].shape[0]
+        count_better = 0
+        nsamples = 100
+        for _ in range(nsamples):
+            sample = data.sample(nrows)
+            sample_conf = sample['donor_is_old'].mean()
+            if sample_conf >= self.confidence:
+                count_better += 1
+        return (count_better + 1) / (nsamples + 1)
+
     def rule_to_expression(self) -> str:
         result = ' AND '.join([f'{biomarker}' for biomarker in self.biomarkers] +
                               [f'NOT {biomarker}' for biomarker in self.negated_biomarkers])
